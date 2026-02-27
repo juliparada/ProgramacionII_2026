@@ -1,10 +1,12 @@
 <resources>
-    <string name="app_name">Conversores</string>
+    <string name="app_name">Tarea-Conversores</string>
     <string-array name="tipo">
-        <item>Moendas</item>
+        <item>Monedas</item>
         <item>Longitud</item>
         <item>Volumen</item>
         <item>Masa</item>
+        <item>Tiempo</item>
         <item>Almacenamiento</item>
+        <item>Transferencia de datos</item>
     </string-array>
 </resources>
