@@ -6,7 +6,6 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".MainActivity">
-
     <TabHost
         android:id="@+id/tbhConversores"
         android:layout_width="match_parent"
@@ -89,48 +88,48 @@
                     android:layout_height="match_parent"
                     android:orientation="vertical">
                     <TextView
-                        android:id="@+id/lblVolumnenDe"
+                        android:id="@+id/lblVolumenDe"
                         android:text="DE:"
                         android:layout_marginTop="20dp"
                         android:layout_marginLeft="20dp"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"/>
                     <Spinner
-                        android:id="@+id/spnVolumnenDe"
+                        android:id="@+id/spnVolumenDe"
                         android:entries="@array/volumen"
                         android:layout_marginLeft="60dp"
                         android:layout_marginTop="20dp"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"/>
                     <TextView
-                        android:id="@+id/lblVolumnenA"
+                        android:id="@+id/lblVolumenA"
                         android:text="A:"
                         android:layout_marginTop="80dp"
                         android:layout_marginLeft="20dp"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"/>
                     <Spinner
-                        android:id="@+id/spnVolumnenA"
+                        android:id="@+id/spnVolumenA"
                         android:entries="@array/volumen"
                         android:layout_marginLeft="60dp"
                         android:layout_marginTop="80dp"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"/>
                     <EditText
-                        android:id="@+id/txtVolumnenCantidad"
+                        android:id="@+id/txtVolumenCantidad"
                         android:layout_marginTop="120dp"
                         android:hint="Cantidad a convertir"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"/>
                     <TextView
-                        android:id="@+id/lblVolumnenRespuesta"
+                        android:id="@+id/lblVolumenRespuesta"
                         android:layout_marginTop="180dp"
                         android:layout_marginLeft="20dp"
                         android:text="Respuesta: ?"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"/>
                     <Button
-                        android:id="@+id/btnVolumnenConvertir"
+                        android:id="@+id/btnVolumenConvertir"
                         android:layout_marginTop="240dp"
                         android:text="CONVERTIR"
                         android:layout_width="match_parent"
