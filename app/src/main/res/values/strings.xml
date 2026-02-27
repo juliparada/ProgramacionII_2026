@@ -1,4 +1,10 @@
 <resources>
-    <string name="app_name">Conversores mejorados</string>
-
+    <string name="app_name">Conversores</string>
+    <string-array name="tipo">
+        <item>Moendas</item>
+        <item>Longitud</item>
+        <item>Volumen</item>
+        <item>Masa</item>
+        <item>Almacenamiento</item>
+    </string-array>
 </resources>
