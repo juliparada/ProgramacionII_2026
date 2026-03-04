@@ -1,12 +1,4 @@
 <resources>
-    <string name="app_name">Tarea-Conversores</string>
-    <string-array name="tipo">
-        <item>Monedas</item>
-        <item>Longitud</item>
-        <item>Volumen</item>
-        <item>Masa</item>
-        <item>Tiempo</item>
-        <item>Almacenamiento</item>
-        <item>Transferencia de datos</item>
-    </string-array>
+    <string name="app_name"></string>
+
 </resources>
