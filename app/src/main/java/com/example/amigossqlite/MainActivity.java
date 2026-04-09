@@ -1,5 +1,6 @@
 package com.example.amigossqlite;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -11,20 +12,21 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+
+import org.json.JSONObject;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends Activity {
     DB db;
     Button btn;
     TextView tempVal;
-    String accion="Nuevo", idAmigo="0", urlFoto="";
+    String accion="nuevo", idAmigo="", urlFoto;
     Intent tomarFotoIntent;
     FloatingActionButton fab;
     ImageView img;
@@ -43,8 +45,40 @@ public class MainActivity extends AppCompatActivity {
         btn.setOnClickListener(v->guardarAmigo());
 
         fab = findViewById(R.id.fabListaAmigo);
-    }
+        fab.setOnClickListener(v->regresarListaAmigos());
 
+        mostrarDatosAmigos();
+    }
+    private void mostrarDatosAmigos(){
+        try{
+            Bundle parametros = getIntent().getExtras();
+            accion = parametros.getString("accion");
+            if(accion.equals("modificar")){
+                JSONObject datos = new JSONObject(parametros.getString("amigos"));
+                idAmigo = datos.getString("idAmigo");
+
+                tempVal = findViewById(R.id.txtNombreAmigos);
+                tempVal.setText(datos.getString("nombre"));
+
+                tempVal = findViewById(R.id.txtDireccionAmigos);
+                tempVal.setText(datos.getString("direccion"));
+
+                tempVal = findViewById(R.id.txtTelefonoAmigos);
+                tempVal.setText(datos.getString("telefono"));
+
+                tempVal = findViewById(R.id.txtEmailAmigos);
+                tempVal.setText(datos.getString("email"));
+
+                tempVal = findViewById(R.id.txtDuiAmigos);
+                tempVal.setText(datos.getString("dui"));
+
+                urlFoto = datos.getString("foto");
+                img.setImageURI(Uri.parse(urlFoto));
+            }
+        }catch (Exception e){
+            mostrarMsg("Error al mostrar los datos: "+ e.getMessage());
+        }
+    }
     private void tomarFoto(){
         tomarFotoIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         File fotoAmigo = null;
@@ -52,11 +86,11 @@ public class MainActivity extends AppCompatActivity {
         try{
             fotoAmigo = crearImgAmigo();
             if(fotoAmigo!=null){
-                Uri uriFoto = FileProvider.getUriForFile(MainActivity.this, "com.example.amigossqlite.fileprovider", fotoAmigo);
+                Uri uriFoto = FileProvider.getUriForFile(MainActivity.this, "com.ugb.miprimeraapp.fileprovider", fotoAmigo);
                 tomarFotoIntent.putExtra(MediaStore.EXTRA_OUTPUT, uriFoto);
                 startActivityForResult(tomarFotoIntent, 1);
             }else{
-                mostrarMsg("No se pudo crear la foto");
+                mostrarMsg("Nose pudo crear la foto");
             }
         } catch (Exception e) {
             mostrarMsg("Error al tomar la foto: "+ e.getMessage());
@@ -68,25 +102,26 @@ public class MainActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         try{
             if(requestCode==1 && resultCode==RESULT_OK){
-                img.setImageURI(Uri.fromFile(new File(urlFoto)));
+                img.setImageURI(Uri.parse(urlFoto));
+            }else{
+                mostrarMsg("No fue posible mostrar la foto");
             }
         } catch (Exception e) {
-            mostrarMsg("Error al mostrar la foto: "+ e.getMessage());
+            mostrarMsg("Error en abrir la camara: "+ e.getMessage());
         }
     }
 
     private File crearImgAmigo() throws Exception{
         String fechaHoraMs = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date()),
-                fileName = "foto_"+ fechaHoraMs;
+                fileMane = "foto_"+ fechaHoraMs;
         File dirAlmacenamiento = getExternalFilesDir(Environment.DIRECTORY_DCIM);
-        if(!dirAlmacenamiento.exists()){
-            dirAlmacenamiento.mkdirs();
+        if(dirAlmacenamiento.exists()==false){
+            dirAlmacenamiento.mkdir();
         }
-        File image = File.createTempFile(fileName, ".jpg", dirAlmacenamiento);
+        File image = File.createTempFile(fileMane, ".jpg", dirAlmacenamiento);
         urlFoto = image.getAbsolutePath();
         return image;
     }
-
     private void guardarAmigo(){
         tempVal = findViewById(R.id.txtNombreAmigos);
         String nombre = tempVal.getText().toString();
@@ -104,15 +139,16 @@ public class MainActivity extends AppCompatActivity {
         String dui = tempVal.getText().toString();
 
         String[] datos = {idAmigo, nombre, direccion, tel, email, dui, urlFoto};
-        String respuesta = db.administrar_amigos(accion, datos);
-        if(respuesta.equals("ok")){
-            mostrarMsg("Registro de amigo guardado con éxito.");
-        } else {
-            mostrarMsg("Error: " + respuesta);
-        }
-    }
+        db.administrar_amigos(accion, datos);
+        mostrarMsg("Registro de amigo guardado con exito.");
 
+        regresarListaAmigos();
+    }
     private void mostrarMsg(String msg){
         Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
+    }
+    private void regresarListaAmigos(){
+        Intent intent = new Intent(this, lista_amigos.class);
+        startActivity(intent);
     }
 }
