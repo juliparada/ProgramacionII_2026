@@ -16,6 +16,8 @@ import androidx.core.content.FileProvider;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
+import org.json.JSONObject;
+
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -24,7 +26,7 @@ public class MainActivity extends Activity {
     DB db;
     Button btn;
     TextView tempVal;
-    String accion="nuevo", idAmigo="", urlFoto;
+    String accion="nuevo", idAmigo="", urlFoto, id="", rev="";
     Intent tomarFotoIntent;
     FloatingActionButton fab;
     ImageView img;
@@ -43,8 +45,41 @@ public class MainActivity extends Activity {
         btn.setOnClickListener(v->guardarAmigo());
 
         fab = findViewById(R.id.fabListaAmigo);
+        fab.setOnClickListener(v->regresarListaAmigos());
 
+        mostrarDatosAmigos();
+    }
+    private void mostrarDatosAmigos(){
+        try{
+            Bundle parametros = getIntent().getExtras();
+            accion = parametros.getString("accion");
+            if(accion.equals("modificar")){
+                JSONObject datos = new JSONObject(parametros.getString("amigos"));
+                id = datos.getString("_id");
+                rev = datos.getString("_rev");
+                idAmigo = datos.getString("idAmigo");
 
+                tempVal = findViewById(R.id.txtNombreAmigos);
+                tempVal.setText(datos.getString("nombre"));
+
+                tempVal = findViewById(R.id.txtDireccionAmigos);
+                tempVal.setText(datos.getString("direccion"));
+
+                tempVal = findViewById(R.id.txtTelefonoAmigos);
+                tempVal.setText(datos.getString("telefono"));
+
+                tempVal = findViewById(R.id.txtEmailAmigos);
+                tempVal.setText(datos.getString("email"));
+
+                tempVal = findViewById(R.id.txtDuiAmigos);
+                tempVal.setText(datos.getString("dui"));
+
+                urlFoto = datos.getString("foto");
+                img.setImageURI(Uri.parse(urlFoto));
+            }
+        }catch (Exception e){
+            mostrarMsg("Error al mostrar los datos: "+ e.getMessage());
+        }
     }
     private void tomarFoto(){
         tomarFotoIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
@@ -90,26 +125,60 @@ public class MainActivity extends Activity {
         return image;
     }
     private void guardarAmigo(){
-        tempVal = findViewById(R.id.txtNombreAmigos);
-        String nombre = tempVal.getText().toString();
+        try {
+            tempVal = findViewById(R.id.txtNombreAmigos);
+            String nombre = tempVal.getText().toString();
 
-        tempVal = findViewById(R.id.txtDireccionAmigos);
-        String direccion = tempVal.getText().toString();
+            tempVal = findViewById(R.id.txtDireccionAmigos);
+            String direccion = tempVal.getText().toString();
 
-        tempVal = findViewById(R.id.txtTelefonoAmigos);
-        String tel = tempVal.getText().toString();
+            tempVal = findViewById(R.id.txtTelefonoAmigos);
+            String tel = tempVal.getText().toString();
 
-        tempVal = findViewById(R.id.txtEmailAmigos);
-        String email = tempVal.getText().toString();
+            tempVal = findViewById(R.id.txtEmailAmigos);
+            String email = tempVal.getText().toString();
 
-        tempVal = findViewById(R.id.txtDuiAmigos);
-        String dui = tempVal.getText().toString();
+            tempVal = findViewById(R.id.txtDuiAmigos);
+            String dui = tempVal.getText().toString();
 
-        String[] datos = {idAmigo, nombre, direccion, tel, email, dui, urlFoto};
-        db.administrar_amigos(accion, datos);
-        mostrarMsg("Registro de amigo guardado con exito.");
+            //guardar datos en la base de datos en local - SQLite
+            String[] datos = {idAmigo, nombre, direccion, tel, email, dui, urlFoto};
+            db.administrar_amigos(accion, datos);
+            //guardar datos en la base de datos CouchDB conWebService y API REST.
+            JSONObject datosAmigos = new JSONObject();
+            if(accion.equals("modificar")){
+                datosAmigos.put("_id", id);
+                datosAmigos.put("_rev", rev);
+            }
+            datosAmigos.put("idAmigo", idAmigo);
+            datosAmigos.put("nombre", nombre);
+            datosAmigos.put("direccion", direccion);
+            datosAmigos.put("telefono", tel);
+            datosAmigos.put("email", email);
+            datosAmigos.put("dui", dui);
+            datosAmigos.put("urlFoto", urlFoto);
+
+            enviarDatosServidor objEnviarDatosServidor = new enviarDatosServidor(this);
+            String respuesta = objEnviarDatosServidor.execute(datosAmigos.toString(), "POST", utilidades.url_mto).get();
+
+            JSONObject respuestaJSON = new JSONObject(respuesta);
+            if(respuestaJSON.getBoolean("ok")){
+                id = respuestaJSON.getString("id");
+                rev = respuestaJSON.getString("rev");
+            }else{
+                mostrarMsg("Error: "+ respuestaJSON.getString("msg"));
+            }
+            mostrarMsg("Registro de amigo guardado con exito.");
+            regresarListaAmigos();
+        } catch (Exception e) {
+            mostrarMsg(e.getMessage());
+        }
     }
     private void mostrarMsg(String msg){
         Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
+    }
+    private void regresarListaAmigos(){
+        Intent intent = new Intent(this, lista_amigos.class);
+        startActivity(intent);
     }
 }
