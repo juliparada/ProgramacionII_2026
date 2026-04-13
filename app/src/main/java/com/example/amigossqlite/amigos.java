@@ -8,7 +8,6 @@ public class amigos {
     String email;
     String dui;
     String foto;
-
     public amigos(String idAmigo, String nombre, String direccion, String telefono, String email, String dui, String foto) {
         this.idAmigo = idAmigo;
         this.nombre = nombre;
@@ -18,7 +17,6 @@ public class amigos {
         this.dui = dui;
         this.foto = foto;
     }
-
     public String getIdAmigo() {
         return idAmigo;
     }
