@@ -1,14 +1,19 @@
 package com.example.amigossqlite;
 
-import java.util.Base64;
+import android.util.Base64;
 
 public class utilidades {
-    //Esta es la que tenía el Inge⚠️
-    static String url_consulta = "http://192.168.1.3:5984/dbamigos/_design/dbamigos/_view/dbamigos";
-    static String url_mto = "http://192.168.1.3:5984/dbamigos"; //CRUD, Insertar, Actualizar, Borrar, y Buscar
-    static String user = "admin";
-    static String passwd = "admin";
-    static String credencialesCodificadas = Base64.getEncoder().encodeToString((user +":"+ passwd).getBytes());
+    // Esta es la URL para ver la vista en el navegador (Fauxton)
+    static String url_consulta = "http:// 192.168.1.10:5984/amigos/_design/yeimy/_view/yeimy";
+
+    // Esta es la URL que usará la App para Insertar, Modificar y Eliminar (API de CouchDB)
+    static String url_mto = "http:// 192.168.1.10:5984/amigos";
+    static String user = "yeimy";
+    static String passwd = "******";
+    
+    // Usamos android.util.Base64 para compatibilidad con Android
+    static String credencialesCodificadas = Base64.encodeToString((user + ":" + passwd).getBytes(), Base64.NO_WRAP);
+
     public String generarUnicoId(){
         return java.util.UUID.randomUUID().toString();
     }

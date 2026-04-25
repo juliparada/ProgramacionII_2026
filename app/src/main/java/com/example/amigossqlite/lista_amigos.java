@@ -1,5 +1,6 @@
 package com.example.amigossqlite;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.database.Cursor;
@@ -16,7 +17,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
@@ -25,7 +25,7 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 
-public class lista_amigos extends AppCompatActivity {
+public class lista_amigos extends Activity {
     Bundle parametros = new Bundle();
     DB db;
     FloatingActionButton fab;
@@ -37,22 +37,23 @@ public class lista_amigos extends AppCompatActivity {
     JSONObject jsonObject;
     int posicion = 0;
     amigos misAmigos;
+    detectarInternet di; 
+    obtenerDatosServidor datosServidor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_lista_amigos);
 
+        parametros.putString("accion","nuevo");
         db = new DB(this);
 
+        // Corregido: El ID en el XML es fabAgregarAmigo (en singular)
         fab = findViewById(R.id.fabAgregarAmigo);
-        fab.setOnClickListener(v -> {
-            parametros.clear();
-            parametros.putString("accion", "nuevo");
-            abrirActivity();
-        });
+        fab.setOnClickListener(v -> abrirActivity());
 
-        ltsAmigos = findViewById(R.id.ltsAmigos);
+        di = new detectarInternet(this);
+
         obtenerAmigos();
         buscarAmigos();
     }
@@ -65,7 +66,7 @@ public class lista_amigos extends AppCompatActivity {
         try {
             AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) menuInfo;
             posicion = info.position;
-            menu.setHeaderTitle(jsonArray.getJSONObject(posicion).getString("nombre"));
+            menu.setHeaderTitle(jsonArray.getJSONObject(posicion).getJSONObject("value").getString("nombre"));
         } catch (Exception e) {
             mostrarMsg("Error al desplegar menu: " + e.getMessage());
         }
@@ -75,46 +76,60 @@ public class lista_amigos extends AppCompatActivity {
     public boolean onContextItemSelected(@NonNull MenuItem item) {
         try {
             if (item.getItemId() == R.id.mnxAgregar) {
-                parametros.clear();
-                parametros.putString("accion", "nuevo");
                 abrirActivity();
             } else if (item.getItemId() == R.id.mnxModificar) {
-                parametros.clear();
                 parametros.putString("accion", "modificar");
-                parametros.putString("amigos", jsonArray.getJSONObject(posicion).toString());
+                parametros.putString("amigos", jsonArray.getJSONObject(posicion).getJSONObject("value").toString());
                 abrirActivity();
             } else if (item.getItemId() == R.id.mnxEliminar) {
                 borrarAmigo();
             }
             return true;
         } catch (Exception e) {
-            mostrarMsg("Error: " + e.getMessage());
+            mostrarMsg("Error al seleccionar un item del menu: " + e.getMessage());
             return super.onContextItemSelected(item);
         }
     }
 
     private void borrarAmigo() {
         try {
-            String nombre = jsonArray.getJSONObject(posicion).getString("nombre");
+            String nombre = jsonArray.getJSONObject(posicion).getJSONObject("value").getString("nombre");
             AlertDialog.Builder confirmacion = new AlertDialog.Builder(this);
             confirmacion.setTitle("¿Está seguro de borrar a?");
             confirmacion.setMessage(nombre);
             confirmacion.setPositiveButton("SI", (dialog, which) -> {
                 try {
                     String respuesta = db.administrar_amigos("eliminar",
-                            new String[]{jsonArray.getJSONObject(posicion).getString("idAmigo")});
-                    if (respuesta.equals("ok")) {
-                        obtenerAmigos();
-                        mostrarMsg("Amigo borrado con éxito.");
+                            new String[]{jsonArray.getJSONObject(posicion).getJSONObject("value").getString("idAmigo")});
+
+                    if (respuesta.equals("ok") && di.hayConexionInternet()) {
+                        JSONObject datosAmigos = new JSONObject();
+                        String _id = jsonArray.getJSONObject(posicion).getJSONObject("value").getString("_id");
+                        String _rev = jsonArray.getJSONObject(posicion).getJSONObject("value").getString("_rev");
+                        String url = utilidades.url_mto + "/" + _id + "?rev=" + _rev;
+
+                        enviarDatosServidor objEnviarDatosServidor = new enviarDatosServidor(this);
+                        respuesta = objEnviarDatosServidor.execute(datosAmigos.toString(), "DELETE", url).get();
+                        JSONObject respuestaJSON = new JSONObject(respuesta);
+
+                        if (!respuestaJSON.optBoolean("ok", false)) {
+                            mostrarMsg("Error al eliminar en el servidor: " + respuesta);
+                        }
+                        mostrarMsg("Registro eliminado con éxito.");
+                    } else if (respuesta.equals("ok")) {
+                        mostrarMsg("Amigo borrado con éxito solo en local.");
                     }
+                    obtenerAmigos();
                 } catch (Exception e) {
                     mostrarMsg(e.getMessage());
                 }
             });
-            confirmacion.setNegativeButton("NO", (dialog, which) -> dialog.dismiss());
+            confirmacion.setNegativeButton("NO", (dialog, which) -> {
+                dialog.dismiss();
+            });
             confirmacion.create().show();
         } catch (Exception e) {
-            mostrarMsg("Error: " + e.getMessage());
+            mostrarMsg("Error al borrar el amigo: " + e.getMessage());
         }
     }
 
@@ -123,13 +138,15 @@ public class lista_amigos extends AppCompatActivity {
         tempVal.addTextChangedListener(new TextWatcher() {
             @Override
             public void afterTextChanged(Editable s) {}
+
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 alAmigos.clear();
-                String buscar = s.toString().trim().toLowerCase();
-                if (buscar.isEmpty()) {
+                String buscar = tempVal.getText().toString().trim().toLowerCase();
+                if (buscar.length() <= 0) {
                     alAmigos.addAll(alAmigosCopia);
                 } else {
                     for (amigos item : alAmigosCopia) {
@@ -140,7 +157,7 @@ public class lista_amigos extends AppCompatActivity {
                         }
                     }
                 }
-                ltsAmigos.setAdapter(new AdaptadorAmigos(lista_amigos.this, alAmigos));
+                ltsAmigos.setAdapter(new AdaptadorAmigos(getApplicationContext(), alAmigos));
             }
         });
     }
@@ -153,56 +170,71 @@ public class lista_amigos extends AppCompatActivity {
 
     private void obtenerAmigos() {
         try {
-            cAmigos = db.lista_amigos();
-            if (cAmigos.moveToFirst()) {
-                jsonArray = new JSONArray();
-                do {
-                    jsonObject = new JSONObject();
-                    jsonObject.put("idAmigo", cAmigos.getString(0));
-                    jsonObject.put("nombre", cAmigos.getString(1));
-                    jsonObject.put("direccion", cAmigos.getString(2));
-                    jsonObject.put("telefono", cAmigos.getString(3));
-                    jsonObject.put("email", cAmigos.getString(4));
-                    jsonObject.put("dui", cAmigos.getString(5));
-                    jsonObject.put("foto", cAmigos.getString(6));
-                    jsonArray.put(jsonObject);
-                } while (cAmigos.moveToNext());
-                mostrarAmigos();
+            if (di.hayConexionInternet()) {
+                datosServidor = new obtenerDatosServidor();
+                String respuesta = datosServidor.execute().get();
+                if (respuesta != null) {
+                    jsonObject = new JSONObject(respuesta);
+                    jsonArray = jsonObject.getJSONArray("rows");
+                    mostrarAmigos();
+                } else {
+                    mostrarMsg("No se pudo obtener datos del servidor");
+                }
             } else {
-                alAmigos.clear();
-                alAmigosCopia.clear();
-                if (ltsAmigos != null) ltsAmigos.setAdapter(null);
-                mostrarMsg("No hay amigos que mostrar");
+                cAmigos = db.lista_amigos();
+                if (cAmigos.moveToFirst()) {
+                    jsonArray = new JSONArray();
+                    do {
+                        JSONObject item = new JSONObject();
+                        JSONObject value = new JSONObject();
+                        value.put("idAmigo", cAmigos.getString(0));
+                        value.put("nombre", cAmigos.getString(1));
+                        value.put("direccion", cAmigos.getString(2));
+                        value.put("telefono", cAmigos.getString(3));
+                        value.put("email", cAmigos.getString(4));
+                        value.put("dui", cAmigos.getString(5));
+                        value.put("foto", cAmigos.getString(6));
+                        item.put("value", value);
+                        jsonArray.put(item);
+                    } while (cAmigos.moveToNext());
+                    mostrarAmigos();
+                } else {
+                    mostrarMsg("No hay amigos que mostrar");
+                }
             }
         } catch (Exception e) {
-            mostrarMsg(e.getMessage());
+            mostrarMsg("Error al obtener amigos: " + e.getMessage());
         }
     }
 
     private void mostrarAmigos() {
         try {
-            ltsAmigos = findViewById(R.id.ltsAmigos);
-            alAmigos.clear();
-            alAmigosCopia.clear();
+            if (jsonArray != null && jsonArray.length() > 0) {
+                ltsAmigos = findViewById(R.id.ltsAmigos);
+                alAmigos.clear();
+                alAmigosCopia.clear();
 
-            for (int i = 0; i < jsonArray.length(); i++) {
-                jsonObject = jsonArray.getJSONObject(i);
-                misAmigos = new amigos(
-                        jsonObject.getString("idAmigo"),
-                        jsonObject.getString("nombre"),
-                        jsonObject.getString("direccion"),
-                        jsonObject.getString("telefono"),
-                        jsonObject.getString("email"),
-                        jsonObject.getString("dui"),
-                        jsonObject.getString("foto")
-                );
-                alAmigos.add(misAmigos);
+                for (int i = 0; i < jsonArray.length(); i++) {
+                    jsonObject = jsonArray.getJSONObject(i).getJSONObject("value");
+                    misAmigos = new amigos(
+                            jsonObject.optString("idAmigo", ""),
+                            jsonObject.optString("nombre", ""),
+                            jsonObject.optString("direccion", ""),
+                            jsonObject.optString("telefono", ""),
+                            jsonObject.optString("email", ""),
+                            jsonObject.optString("dui", ""),
+                            jsonObject.optString("foto", "")
+                    );
+                    alAmigos.add(misAmigos);
+                }
+                alAmigosCopia.addAll(alAmigos);
+                ltsAmigos.setAdapter(new AdaptadorAmigos(this, alAmigos));
+                registerForContextMenu(ltsAmigos);
+            } else {
+                mostrarMsg("No hay amigos que mostrar...");
             }
-            alAmigosCopia.addAll(alAmigos);
-            ltsAmigos.setAdapter(new AdaptadorAmigos(this, alAmigos));
-            registerForContextMenu(ltsAmigos);
         } catch (Exception e) {
-            mostrarMsg(e.getMessage());
+            mostrarMsg("Error al mostrar amigos: " + e.getMessage());
         }
     }
 

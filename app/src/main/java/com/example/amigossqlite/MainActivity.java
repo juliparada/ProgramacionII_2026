@@ -26,7 +26,7 @@ public class MainActivity extends Activity {
     DB db;
     Button btn;
     TextView tempVal;
-    String accion="nuevo", idAmigo="", urlFoto, id="", rev="";
+    String accion = "nuevo", idAmigo = "", urlFoto = "", id = "", rev = "";
     Intent tomarFotoIntent;
     FloatingActionButton fab;
     ImageView img;
@@ -37,116 +37,120 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
 
         img = findViewById(R.id.imgFotoAmigo);
-        img.setOnClickListener(v->tomarFoto());
+        img.setOnClickListener(v -> tomarFoto());
 
         db = new DB(this);
 
         btn = findViewById(R.id.btnGuardarAmigo);
-        btn.setOnClickListener(v->guardarAmigo());
+        btn.setOnClickListener(v -> guardarAmigo());
 
         fab = findViewById(R.id.fabListaAmigo);
-        fab.setOnClickListener(v->regresarListaAmigos());
+        fab.setOnClickListener(v -> regresarListaAmigos());
 
         mostrarDatosAmigos();
     }
-    private void mostrarDatosAmigos(){
-        try{
+
+    private void mostrarDatosAmigos() {
+        try {
             Bundle parametros = getIntent().getExtras();
-            accion = parametros.getString("accion");
-            if(accion.equals("modificar")){
-                JSONObject datos = new JSONObject(parametros.getString("amigos"));
-                id = datos.getString("_id");
-                rev = datos.getString("_rev");
-                idAmigo = datos.getString("idAmigo");
+            if (parametros != null) {
+                accion = parametros.getString("accion", "nuevo");
+                if ("modificar".equals(accion)) {
+                    JSONObject datos = new JSONObject(parametros.getString("amigos"));
+                    id = datos.optString("_id", "");
+                    rev = datos.optString("_rev", "");
+                    idAmigo = datos.optString("idAmigo", "");
 
-                tempVal = findViewById(R.id.txtNombreAmigos);
-                tempVal.setText(datos.getString("nombre"));
+                    tempVal = findViewById(R.id.txtNombreAmigos);
+                    tempVal.setText(datos.optString("nombre", ""));
 
-                tempVal = findViewById(R.id.txtDireccionAmigos);
-                tempVal.setText(datos.getString("direccion"));
+                    tempVal = findViewById(R.id.txtDireccionAmigos);
+                    tempVal.setText(datos.optString("direccion", ""));
 
-                tempVal = findViewById(R.id.txtTelefonoAmigos);
-                tempVal.setText(datos.getString("telefono"));
+                    tempVal = findViewById(R.id.txtTelefonoAmigos);
+                    tempVal.setText(datos.optString("telefono", ""));
 
-                tempVal = findViewById(R.id.txtEmailAmigos);
-                tempVal.setText(datos.getString("email"));
+                    tempVal = findViewById(R.id.txtEmailAmigos);
+                    tempVal.setText(datos.optString("email", ""));
 
-                tempVal = findViewById(R.id.txtDuiAmigos);
-                tempVal.setText(datos.getString("dui"));
+                    tempVal = findViewById(R.id.txtDuiAmigos);
+                    tempVal.setText(datos.optString("dui", ""));
 
-                urlFoto = datos.getString("foto");
-                img.setImageURI(Uri.parse(urlFoto));
+                    urlFoto = datos.optString("foto", "");
+                    if (!urlFoto.isEmpty()) {
+                        img.setImageURI(Uri.parse(urlFoto));
+                    }
+                }
             }
-        }catch (Exception e){
-            mostrarMsg("Error al mostrar los datos: "+ e.getMessage());
+        } catch (Exception e) {
+            mostrarMsg("Error al mostrar los datos: " + e.getMessage());
         }
     }
-    private void tomarFoto(){
+
+    private void tomarFoto() {
         tomarFotoIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         File fotoAmigo = null;
 
-        try{
+        try {
             fotoAmigo = crearImgAmigo();
-            if(fotoAmigo!=null){
-                Uri uriFoto = FileProvider.getUriForFile(MainActivity.this, "com.ugb.miprimeraapp.fileprovider", fotoAmigo);
+            if (fotoAmigo != null) {
+                Uri uriFoto = FileProvider.getUriForFile(MainActivity.this, "com.example.amigossqlite.fileprovider", fotoAmigo);
                 tomarFotoIntent.putExtra(MediaStore.EXTRA_OUTPUT, uriFoto);
                 startActivityForResult(tomarFotoIntent, 1);
-            }else{
-                mostrarMsg("Nose pudo crear la foto");
+            } else {
+                mostrarMsg("No se pudo crear el archivo para la foto");
             }
         } catch (Exception e) {
-            mostrarMsg("Error al tomar la foto: "+ e.getMessage());
+            mostrarMsg("Error al tomar la foto: " + e.getMessage());
         }
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        try{
-            if(requestCode==1 && resultCode==RESULT_OK){
+        try {
+            if (requestCode == 1 && resultCode == RESULT_OK) {
                 img.setImageURI(Uri.parse(urlFoto));
-            }else{
-                mostrarMsg("No fue posible mostrar la foto");
+            } else {
+                mostrarMsg("No fue posible capturar la foto");
             }
         } catch (Exception e) {
-            mostrarMsg("Error en abrir la camara: "+ e.getMessage());
+            mostrarMsg("Error al procesar la foto: " + e.getMessage());
         }
     }
 
-    private File crearImgAmigo() throws Exception{
-        String fechaHoraMs = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date()),
-                fileMane = "foto_"+ fechaHoraMs;
+    private File crearImgAmigo() throws Exception {
+        String fechaHoraMs = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        String fileName = "foto_" + fechaHoraMs;
         File dirAlmacenamiento = getExternalFilesDir(Environment.DIRECTORY_DCIM);
-        if(dirAlmacenamiento.exists()==false){
-            dirAlmacenamiento.mkdir();
+        if (dirAlmacenamiento != null && !dirAlmacenamiento.exists()) {
+            dirAlmacenamiento.mkdirs();
         }
-        File image = File.createTempFile(fileMane, ".jpg", dirAlmacenamiento);
+        File image = File.createTempFile(fileName, ".jpg", dirAlmacenamiento);
         urlFoto = image.getAbsolutePath();
         return image;
     }
-    private void guardarAmigo(){
+
+    private void guardarAmigo() {
         try {
-            tempVal = findViewById(R.id.txtNombreAmigos);
-            String nombre = tempVal.getText().toString();
+            String nombre = ((TextView) findViewById(R.id.txtNombreAmigos)).getText().toString();
+            String direccion = ((TextView) findViewById(R.id.txtDireccionAmigos)).getText().toString();
+            String tel = ((TextView) findViewById(R.id.txtTelefonoAmigos)).getText().toString();
+            String email = ((TextView) findViewById(R.id.txtEmailAmigos)).getText().toString();
+            String dui = ((TextView) findViewById(R.id.txtDuiAmigos)).getText().toString();
 
-            tempVal = findViewById(R.id.txtDireccionAmigos);
-            String direccion = tempVal.getText().toString();
-
-            tempVal = findViewById(R.id.txtTelefonoAmigos);
-            String tel = tempVal.getText().toString();
-
-            tempVal = findViewById(R.id.txtEmailAmigos);
-            String email = tempVal.getText().toString();
-
-            tempVal = findViewById(R.id.txtDuiAmigos);
-            String dui = tempVal.getText().toString();
-
-            //guardar datos en la base de datos en local - SQLite
+            // Guardar datos en SQLite
             String[] datos = {idAmigo, nombre, direccion, tel, email, dui, urlFoto};
-            db.administrar_amigos(accion, datos);
-            //guardar datos en la base de datos CouchDB conWebService y API REST.
+            String respuestaLocal = db.administrar_amigos(accion, datos);
+
+            if (!"ok".equals(respuestaLocal)) {
+                mostrarMsg("Error en SQLite: " + respuestaLocal);
+                return;
+            }
+
+            // Guardar datos en CouchDB
             JSONObject datosAmigos = new JSONObject();
-            if(accion.equals("modificar")){
+            if ("modificar".equals(accion)) {
                 datosAmigos.put("_id", id);
                 datosAmigos.put("_rev", rev);
             }
@@ -156,29 +160,32 @@ public class MainActivity extends Activity {
             datosAmigos.put("telefono", tel);
             datosAmigos.put("email", email);
             datosAmigos.put("dui", dui);
-            datosAmigos.put("urlFoto", urlFoto);
+            datosAmigos.put("foto", urlFoto);
 
             enviarDatosServidor objEnviarDatosServidor = new enviarDatosServidor(this);
             String respuesta = objEnviarDatosServidor.execute(datosAmigos.toString(), "POST", utilidades.url_mto).get();
 
             JSONObject respuestaJSON = new JSONObject(respuesta);
-            if(respuestaJSON.getBoolean("ok")){
+            if (respuestaJSON.optBoolean("ok", false)) {
                 id = respuestaJSON.getString("id");
                 rev = respuestaJSON.getString("rev");
-            }else{
-                mostrarMsg("Error: "+ respuestaJSON.getString("msg"));
+                mostrarMsg("Registro guardado con éxito.");
+            } else {
+                mostrarMsg("Error en el servidor: " + respuestaJSON.optString("reason", "Error desconocido"));
             }
-            mostrarMsg("Registro de amigo guardado con exito.");
             regresarListaAmigos();
         } catch (Exception e) {
-            mostrarMsg(e.getMessage());
+            mostrarMsg("Error al guardar: " + e.getMessage());
         }
     }
-    private void mostrarMsg(String msg){
+
+    private void mostrarMsg(String msg) {
         Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
     }
-    private void regresarListaAmigos(){
+
+    private void regresarListaAmigos() {
         Intent intent = new Intent(this, lista_amigos.class);
         startActivity(intent);
+        finish();
     }
 }
