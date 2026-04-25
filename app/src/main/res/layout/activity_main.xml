@@ -57,6 +57,14 @@
             android:layout_height="wrap_content"
             android:text="Guardar Amigo" />
 
+        <Button
+            android:id="@+id/btnEliminarAmigo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:backgroundTint="#F44336"
+            android:text="Eliminar Amigo"
+            android:visibility="gone" />
+
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/fabListaAmigo"
             android:layout_width="wrap_content"

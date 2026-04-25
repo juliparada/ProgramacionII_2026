@@ -6,6 +6,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -24,7 +25,7 @@ import java.util.Date;
 
 public class MainActivity extends Activity {
     DB db;
-    Button btn;
+    Button btn, btnEliminar;
     TextView tempVal;
     String accion = "nuevo", idAmigo = "", urlFoto = "", id = "", rev = "";
     Intent tomarFotoIntent;
@@ -44,6 +45,9 @@ public class MainActivity extends Activity {
         btn = findViewById(R.id.btnGuardarAmigo);
         btn.setOnClickListener(v -> guardarAmigo());
 
+        btnEliminar = findViewById(R.id.btnEliminarAmigo);
+        btnEliminar.setOnClickListener(v -> eliminarAmigo());
+
         fab = findViewById(R.id.fabListaAmigo);
         fab.setOnClickListener(v -> regresarListaAmigos());
 
@@ -56,6 +60,7 @@ public class MainActivity extends Activity {
             if (parametros != null) {
                 accion = parametros.getString("accion", "nuevo");
                 if ("modificar".equals(accion)) {
+                    btnEliminar.setVisibility(View.VISIBLE);
                     JSONObject datos = new JSONObject(parametros.getString("amigos"));
                     id = datos.optString("_id", "");
                     rev = datos.optString("_rev", "");
@@ -181,6 +186,47 @@ public class MainActivity extends Activity {
 
     private void mostrarMsg(String msg) {
         Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
+    }
+
+    private void eliminarAmigo() {
+        try {
+            android.app.AlertDialog.Builder confirmacion = new android.app.AlertDialog.Builder(this);
+            confirmacion.setTitle("¿Está seguro de eliminar este registro?");
+            confirmacion.setPositiveButton("SI", (dialog, which) -> {
+                try {
+                    // Eliminar de SQLite
+                    String respuestaLocal = db.administrar_amigos("eliminar", new String[]{idAmigo});
+
+                    if ("ok".equals(respuestaLocal)) {
+                        detectarInternet di = new detectarInternet(this);
+                        if (di.hayConexionInternet()) {
+                            // Eliminar de CouchDB
+                            String url = utilidades.url_mto + "/" + id + "?rev=" + rev;
+                            enviarDatosServidor objEnviarDatosServidor = new enviarDatosServidor(this);
+                            String respuesta = objEnviarDatosServidor.execute("{}", "DELETE", url).get();
+
+                            JSONObject respuestaJSON = new JSONObject(respuesta);
+                            if (respuestaJSON.optBoolean("ok", false)) {
+                                mostrarMsg("Registro eliminado con éxito.");
+                            } else {
+                                mostrarMsg("Error en el servidor al eliminar: " + respuestaJSON.optString("reason", "Error desconocido"));
+                            }
+                        } else {
+                            mostrarMsg("Registro eliminado localmente.");
+                        }
+                        regresarListaAmigos();
+                    } else {
+                        mostrarMsg("Error en SQLite: " + respuestaLocal);
+                    }
+                } catch (Exception e) {
+                    mostrarMsg("Error al eliminar: " + e.getMessage());
+                }
+            });
+            confirmacion.setNegativeButton("NO", (dialog, which) -> dialog.dismiss());
+            confirmacion.create().show();
+        } catch (Exception e) {
+            mostrarMsg("Error al mostrar confirmación: " + e.getMessage());
+        }
     }
 
     private void regresarListaAmigos() {

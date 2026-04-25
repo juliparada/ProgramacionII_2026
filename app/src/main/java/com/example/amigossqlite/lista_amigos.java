@@ -230,6 +230,17 @@ public class lista_amigos extends Activity {
                 alAmigosCopia.addAll(alAmigos);
                 ltsAmigos.setAdapter(new AdaptadorAmigos(this, alAmigos));
                 registerForContextMenu(ltsAmigos);
+
+                // Agregar el clic normal para ver/editar
+                ltsAmigos.setOnItemClickListener((parent, view, position, id) -> {
+                    try {
+                        parametros.putString("accion", "modificar");
+                        parametros.putString("amigos", jsonArray.getJSONObject(position).getJSONObject("value").toString());
+                        abrirActivity();
+                    } catch (Exception e) {
+                        mostrarMsg("Error al abrir amigo: " + e.getMessage());
+                    }
+                });
             } else {
                 mostrarMsg("No hay amigos que mostrar...");
             }
