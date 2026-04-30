@@ -1,0 +1,26 @@
+# Archivos de Gradle
+.gradle/
+build/
+
+# Archivos de Android Studio / IntelliJ
+*.iml
+.idea/
+!.idea/codeStyles/
+!.idea/copyright/
+!.idea/compiler.xml
+!.idea/jarRepositories.xml
+!.idea/misc.xml
+!.idea/modules.xml
+!.idea/vcs.xml
+*.iws
+*.ipr
+
+# Archivos locales y de configuración personal
+local.properties
+captures/
+.externalNativeBuild/
+.cxx/
+.DS_Store
+
+# Logs
+*.log
