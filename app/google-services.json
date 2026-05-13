@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "92232880737",
+    "firebase_url": "https://practica-26-9cebc-default-rtdb.firebaseio.com",
+    "project_id": "practica-26-9cebc",
+    "storage_bucket": "practica-26-9cebc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:92232880737:android:c5e8304e60523d7bb49020",
+        "android_client_info": {
+          "package_name": "com.example.amigossqlite"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAB3dZwwDTdQgwOu2BxqkhKr44V4rRVT_w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
