@@ -1,13 +1,32 @@
 package com.example.amigossqlite;
 
+import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
-import androidx.appcompat.app.AppCompatActivity;
+import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.TextView;
 
-public class MainActivity extends AppCompatActivity {
 
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+
+public class MainActivity extends Activity {
+    FloatingActionButton fab;
+    Button btn;
+    TextView tempVal;
+    String accion="", idAmigo="", id="", rev="";
+    ImageView img;
+    String urlCompletaFoto="", getUrlCompletaFotoFireStore="";
+    Intent tomarFotoIntent;
+    detectarinternet di;
+    DatabaseReference databaseReference;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        databaseReference = FirebaseDatabase.getInstance().getReference();
     }
 }
