@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/mnxModificar"
+        android:title="Modificar Datos" />
+    <item
+        android:id="@+id/mnxEliminar"
+        android:title="Eliminar Amigo" />
+</menu>

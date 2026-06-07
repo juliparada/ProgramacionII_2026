@@ -2,5 +2,8 @@
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
     <external-path
         name="mis_imagenes"
-        path="./"/>
+        path="."/>
+    <external-files-path
+        name="mis_fotos"
+        path="Android/data/com.example.amigossqlite/files/DCIM" />
 </paths>
